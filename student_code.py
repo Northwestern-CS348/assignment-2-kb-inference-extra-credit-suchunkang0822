@@ -142,6 +142,98 @@ class KnowledgeBase(object):
         """
         ####################################################
         # Student code goes here
+        temp = self.explain_help(fact_or_rule)
+        print(temp.strip())
+        return temp.strip()
+
+    def explain_help(self,fact_or_rule):
+        counter = 0
+        result = ""
+        if isinstance(fact_or_rule,Fact):
+            if fact_or_rule not in self.facts:
+                return "Fact is not in the KB"
+            else:
+                fact_or_rule = self._get_fact(fact_or_rule)
+
+        elif isinstance(fact_or_rule,Rule):
+            if fact_or_rule not in self.rules:
+                return "Rule is not in the KB"
+            else:
+                fact_or_rule = self._get_rule(fact_or_rule)
+
+        result = ""
+        if isinstance(fact_or_rule, Fact):
+            result += self.kb_explain_helper_fact(fact_or_rule)
+            if fact_or_rule.asserted:
+                result = result[:-10] + '\n'
+        elif isinstance(fact_or_rule, Rule):
+            result += self.kb_explain_helper_rule(fact_or_rule)
+            if fact_or_rule.asserted:
+                result = result[:-10] + '\n'
+        indent = '  '
+        for a in fact_or_rule.supported_by:
+            result += indent + "SUPPORTED BY\n"
+            for element in a:
+                result += (indent*2).join(self.rec(element).splitlines(True))
+        #a = self.recursion(fact_or_rule,result,counter)
+        return result
+
+    def rec(self, fact_or_rule):
+        result = ""
+        indent = '  '
+        if isinstance(fact_or_rule, Fact):
+            result += indent*2 + self.kb_explain_helper_fact(fact_or_rule)
+        elif isinstance(fact_or_rule, Rule):
+            result += indent*2 + self.kb_explain_helper_rule(fact_or_rule)
+
+        for a in fact_or_rule.supported_by:
+            result += indent + "SUPPORTED BY\n"
+            for element in a:
+                result += (indent*2).join(self.rec(element).splitlines(True))
+        #print(result)
+        return result
+
+
+
+    def recursion(self,fact_or_rule,result,counter):
+        counter += 1
+        if fact_or_rule.supported_by:
+            for element in fact_or_rule.supported_by:
+                result += "  SUPPORTED BY\n"
+                result += " "*(4*counter)
+                for fr in element:
+                    temp = self.explain_help(fr)
+                    result += temp.replace("\n","\n    ")
+
+
+        return result
+
+    def kb_explain_helper_rule(self,rule):
+        r = "rule: ("
+        if isinstance(rule,Rule):
+            i = len(rule.lhs)
+            for l in rule.lhs:
+                r += ("{}".format(l))
+                i -= 1
+                if i >= 1:
+                    r += ", "
+            r += (") -> {}".format(rule.rhs))
+            if rule.asserted:
+                r += (" ASSERTED\n")
+            else:
+                r += ("\n")
+        return r
+
+    def kb_explain_helper_fact(self,fact):
+        f = ""
+        if isinstance(fact,Fact):
+            f += ("fact: {}".format(fact.statement))
+            if fact.asserted:
+                f += (" ASSERTED\n")
+            else:
+                f += ("\n")
+        return f
+
 
 
 class InferenceEngine(object):
